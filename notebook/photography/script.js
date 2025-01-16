@@ -26,22 +26,27 @@ contactForm.addEventListener('submit', function(e) {
 
 // Lazy loading for images
 document.addEventListener('DOMContentLoaded', function() {
-    const images = document.querySelectorAll('img');
-    
+    const images = document.querySelectorAll('img[data-src]');
+    const loadingSpinner = document.createElement('div');
+    loadingSpinner.classList.add('loading-spinner');
+
     const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
-                if (img.dataset.src) {
-                    img.src = img.dataset.src;
-                    img.removeAttribute('data-src');
-                }
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                img.classList.remove('lazy-img');
                 observer.unobserve(img);
             }
         });
     });
 
-    images.forEach(img => imageObserver.observe(img));
+    images.forEach(img => {
+        img.classList.add('lazy-img');
+        img.parentNode.insertBefore(loadingSpinner.cloneNode(true), img.nextSibling);
+        imageObserver.observe(img);
+    });
 });
 
 // Navbar scroll effect
@@ -65,5 +70,58 @@ galleryItems.forEach(item => {
     
     item.addEventListener('mouseleave', function() {
         this.style.transform = 'scale(1)';
+    });
+
+    // Lightbox
+    item.addEventListener('click', function() {
+        const img = this.querySelector('img');
+        const lightbox = document.createElement('div');
+        lightbox.classList.add('lightbox');
+        lightbox.innerHTML = `
+            <div class="lightbox-content">
+                <img src="${img.src}" alt="${img.alt}">
+                <span class="close-lightbox">&times;</span>
+            </div>
+        `;
+        document.body.appendChild(lightbox);
+
+        const closeLightbox = () => {
+            lightbox.remove();
+            document.body.style.overflow = 'auto';
+        };
+
+        lightbox.querySelector('.close-lightbox').addEventListener('click', closeLightbox);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+// Back-to-top button
+const backToTopBtn = document.createElement('button');
+backToTopBtn.classList.add('back-to-top');
+backToTopBtn.innerHTML = '&#8679;';
+document.body.appendChild(backToTopBtn);
+
+window.addEventListener('scroll', function() {
+    const navbar = document.querySelector('.navbar');
+    if (window.scrollY > 50) {
+        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+        navbar.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+        backToTopBtn.style.display = 'block';
+    } else {
+        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        navbar.style.boxShadow = 'none';
+        backToTopBtn.style.display = 'none';
+    }
+});
+
+backToTopBtn.addEventListener('click', function() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
     });
 });
